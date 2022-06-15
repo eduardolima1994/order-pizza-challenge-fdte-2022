@@ -1,0 +1,1268 @@
+{
+    "name": "pizza-trainee-2022",
+    "description": "order a pizza",
+    "blueprint_spec": {
+        "lanes": [
+            {
+                "id": "1",
+                "name": "the_only_lane",
+                "rule": [
+                    "fn",
+                    [
+                        "&",
+                        "args"
+                    ],
+                    true
+                ]
+            }
+        ],
+        "nodes": [
+            {
+                "id": "INICIO",
+                "type": "Start",
+                "name": "Início",
+                "parameters": {
+                    "input_schema": {}
+                },
+                "next": "PEDIDO-DE-PIZZA",
+                "lane_id": "1"
+            },
+					
+            {
+                "id": "LOGIN-NO-APP",
+                "name": "Logar no aplicativo",
+                "next": "LOGIN-NO-APP",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "LOGIN-NO-APP",
+                    "input": {
+                        "menu": {
+                            "$ref": "login.cliente-pizza"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "LOGIN-FEITO",
+                "name": "Verifica se o cliente esta logado",
+                "next": {
+                    "SIM": "LOGADO-COM-SUCESSO",
+                    "NAO": "ERRO-AO-LOGAR",
+                    "default": "ERRO-AO-LOGAR"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "resultado.loginAcesso"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "LOGADO-COM-SUCESSO",
+                "name": "Loga no app e permite compra",
+                "next": "PEDIR-PIZZA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/areadocliente",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ERRO-AO-LOGAR",
+                "name": "Erro ao realizar login",
+                "next": "LOGIN-NO-APP",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "ERRO-AO-LOGAR"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/erro",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "PEDIR-PIZZA",
+                "name": "Inicia o processo de pedido",
+                "next": "LISTAGEM-DE-PRODUTOS",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "PEDIR-PIZZA",
+                    "input": {
+                        "menu": {
+                            "$ref": "sacola.cliente.pizza"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "LISTAGEM-DE-PRODUTOS",
+                "name": "Lista produtos para compra",
+                "next": "PEDIDO-DE-PIZZA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "LISTAGEM-DE-PRODUTOS"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/listadepizzas",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ESCOLHER-TAMANHO",
+                "name": "Escolhe o tamanho da pizza",
+                "next": "TAMANHO-DISPONIVEL",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ESCOLHER-TAMANHO",
+                    "input": {
+                        "menu": {
+                            "$ref": "sacola.cliente.pizzaTamanho"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "TAMANHO-DISPONIVEL",
+                "name": "Verifica se o tamanho esta disponível",
+                "next": {
+                    "SIM": "TAMANHO-SELECIONADO",
+                    "NAO": "TAMANHO-INDISPONIVEL",
+                    "default": "TAMANHO-INDISPONIVEL"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.tamanhoPizza"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "TAMANHO-SELECIONADO",
+                "name": "Tamanho disponível",
+                "next": "ESCOLHER-SABOR",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "TAMANHO-SELECIONADO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "TAMANHO-INDISPONIVEL",
+                "name": "Tamanho indisponível",
+                "next": "ESCOLHER-TAMANHO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "TAMANHO-INDISPONIVEL"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/indisponivelpizzas",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ESCOLHER-SABOR",
+                "name": "Escolhe o sabor da pizza",
+                "next": "A-PIZZA-E-GRANDE",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ESCOLHER-SABOR",
+                    "input": {
+                        "menu": {
+                            "$ref": "sacola.cliente.pizzaSabor"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "A-PIZZA-E-GRANDE",
+                "name": "Verifica se a pizza é grande",
+                "next": {
+                    "SIM": "LIBERADO-DOIS-SABORES",
+                    "NAO": "LIBERADO-UM-SABOR",
+                    "default": "LIBERADO-UM-SABOR"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.saborPizza"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "LIBERADO-DOIS-SABORES",
+                "name": "Liberado dois sabores",
+                "next": "ESCOLHER-DOIS-SABORES",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "LIBERADO-DOIS-SABORES"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/2",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "LIBERADO-UM-SABOR",
+                "name": "Liberado um sabor",
+                "next": "ESCOLHER-UM-SABOR",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "LIBERADO-UM-SABOR"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/1",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					 {
+                "id": "ESCOLHER-DOIS-SABORES",
+                "name": "Escolhe dois sabores da pizza",
+                "next": "SABOR-SELECIONADO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ESCOLHER-DOIS-SABORES",
+                    "input": {
+                        "menu": {
+                            "$ref": "sacola.cliente.pizzaSabores"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ESCOLHER-UM-SABOR",
+                "name": "Escolhe um sabor da pizza",
+                "next": "SABOR-SELECIONADO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ESCOLHER-UM-SABOR",
+                    "input": {
+                        "menu": {
+                            "$ref": "sacola.cliente.pizzaSabor"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "SABOR-SELECIONADO",
+                "name": "Sabor selecionado",
+                "next": "AREA-DE-DESCONTOS",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "SABOR-SELECIONADO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/ok",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "AREA-DE-DESCONTOS",
+                "name": "Área de descontos",
+                "next": "POSSUI-CUPOM-ATIVO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "AREA-DE-DESCONTOS",
+                    "input": {
+                        "menu": {
+                            "$ref": "sacola.cliente.pizzaDesconto"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "POSSUI-CUPOM-ATIVO",
+                "name": "Verifica se existem cupons ativos",
+                "next": {
+                    "SIM": "APLICA-DESCONTO",
+                    "NAO": "SEM-DESCONTO",
+                    "default": "SEM-DESCONTO"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.desconto"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "APLICA-DESCONTO",
+                "name": "Desconto no pedido",
+                "next": "AVANCAR",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "APLICA-DESCONTO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/comdesconto",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "SEM-DESCONTO",
+                "name": "Sem desconto no pedido",
+                "next": "AVANCAR",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "SEM-DESCONTO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/semdesconto",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "AVANCAR",
+                "name": "Avança o processo de compra",
+                "next": "ESQUECEU-DE-ALGO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "AVANCAR",
+                    "input": {
+                        "menu": {
+                            "$ref": "avanca.cliente.pizza"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ESQUECEU-DE-ALGO",
+                "name": "Verifica se esqueceu de inserir algo ao pedido",
+                "next": {
+                    "SIM": "LISTAGEM-DE-PRODUTOS",
+                    "NAO": "SELECAO-COMPLETA",
+                    "default": "SELECAO-COMPLETA"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.esqueceuAlgo"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "SELECAO-COMPLETA",
+                "name": "Seleção completa do pedido",
+                "next": "ENTREGA-DO-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "SELECAO-COMPLETA"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/entregar",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ENTREGA-DO-PEDIDO",
+                "name": "Seleciona a forma de entrega do pedido",
+                "next": "ENTREGAR-OU-RETIRAR",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ENTREGA-DO-PEDIDO",
+                    "input": {
+                        "menu": {
+                            "$ref": "avanca.cliente.entrega"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ENTREGAR-OU-RETIRAR",
+                "name": "Seleciona se entrega o pedido ou vira retirar na loja",
+                "next": {
+                    "ENTREGAR": "ENDERECO-SELECIONADO",
+                    "RETIRAR": "RETIRADA-NA-LOJA",
+                    "default": "ENDERECO-SELECIONADO"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.entregaPedido"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ENDERECO-SELECIONADO",
+                "name": "Endereço selecionado para entrega",
+                "next": "CONCLUIR-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "ENDERECO-SELECIONADO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/endereco",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "RETIRADA-NA-LOJA",
+                "name": "Retirada na loja",
+                "next": "CONCLUIR-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "RETIRADA-NA-LOJA"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/retirada",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "CONCLUIR-PEDIDO",
+                "name": "Concluir instruções do pedido",
+                "next": "PAGAMENTO-ANTECIPADO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "CONCLUIR-PEDIDO",
+                    "input": {
+                        "menu": {
+                            "$ref": "avanca.cliente.concluir"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PAGAMENTO-ANTECIPADO",
+                "name": "Pagamento antecipado no app",
+                "next": {
+                    "SIM": "PIX-OU-CARTAO",
+                    "NAO": "PAGAMENTO-NA-ENTREGA",
+                    "default": "PAGAMENTO-NA-ENTREGA"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.pagamentoAntecipado"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PIX-OU-CARTAO",
+                "name": "Pagamento por pix ou cartão de crédito e débito",
+                "next": "PEDIDO-DE-PIZZA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "PIX-OU-CARTAO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/pagamento",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PAGAMENTO-NA-ENTREGA",
+                "name": "Retirada na loja",
+                "next": "PEDIDO-DE-PIZZA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "PAGAMENTO-NA-ENTREGA"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/selecaodepizzas/retirada",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "PEDIDO-DE-PIZZA",
+                "name": "Ordem de pizza",
+                "next": "PEDIDO-EM-PRODUCAO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "PEDIDO-DE-PIZZA",
+                    "input": {
+                        "menu": {
+                            "$ref": "lista.producao.atendente"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PEDIDO-RECEBIDO",
+                "name": "Cliente recebe o seu pedido",
+                "next": "ENVIO-PARA-PRODUCAO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "PEDIDO-RECEBIDOPAGAMENTO-NA-ENTREGA"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/1",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ENVIO-PARA-PRODUCAO",
+                "name": "Envia o pedido para produção",
+                "next": "PEDIDO-EM-PRODUCAO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ENVIO-PARA-PRODUCAO",
+                    "input": {
+                        "menu": {
+                            "$ref": "lista.producao.pedido"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "PEDIDO-EM-PRODUCAO",
+                "name": "Cliente seu pedido esta em produção",
+                "next": "PREPARAR-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/2",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "PREPARAR-PEDIDO",
+                "name": "Preparar a pizza",
+                "next": "PREPARAR-A-MASSA",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "PREPARAR-PEDIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.producao.preparar"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PREPARAR-A-MASSA",
+                "name": "Preparar a massa da pizza",
+                "next": "PREPARAR-O-RECHEIO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "PREPARAR-A-MASSA",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.producao.massa"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PREPARAR-O-RECHEIO",
+                "name": "Preparar recheio da pizza",
+                "next": "MONTAR-PIZZA",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "PREPARAR-O-RECHEIO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.producao.recheio"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "MONTAR-PIZZA",
+                "name": "Montar pizza",
+                "next": "LEVAR-AO-FORNO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "MONTAR-PIZZA",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.producao.montar"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "LEVAR-AO-FORNO",
+                "name": "Levar pizza ao forno por trinta minutos",
+                "next": "PEDIDO-PRONTO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "LEVAR-AO-FORNO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.producao.forno"
+                        }
+                    }
+                }
+            },
+					 {
+                "id": "PEDIDO-PRONTO",
+                "name": "Notifica que o pedido esta pronto e logo irá chegar",
+                "next": "EMBALA-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/3",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "EMBALA-PEDIDO",
+                "name": "Embala pedido",
+                "next": "ATUALIZA-PEDIDO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "EMBALA-PEDIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.producao.embala"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ATUALIZA-PEDIDO",
+                "name": "Atualiza o status do processo",
+                "next": "ANALISA-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "status": "A CAMINHO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/4",
+                        "verb": "PATCH",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ANALISA-PEDIDO",
+                "name": "Analisa pedido",
+                "next": "ATRASOU",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ANALISA-PEDIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.cliente.analise"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ATRASOU",
+                "name": "Verifica se houve atraso na produção",
+                "next": {
+                    "SIM": "CANCELAMENTO-DISPONIVEL",
+                    "NAO": "SEPARA-A-ENTREGA",
+                    "default": "SEPARA-A-ENTREGA"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.tempoProducao"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "CANCELAMENTO-DISPONIVEL",
+                "name": "Cancelamento por atraso disponível",
+                "next": "PREPARAR-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/cancelar",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ANALISE-DETALHADA",
+                "name": "Analisa pedido",
+                "next": "CANCELAR",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "ANALISE-DETALHADA",
+                    "input": {
+                        "pizza": {
+                            "$ref": "lista.cliente.detalhada"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "CANCELAR",
+                "name": "Cancela o pedido",
+                "next": {
+                    "SIM": "RECLAMACAO",
+                    "NAO": "SEPARA-A-ENTREGA",
+                    "default": "SEPARA-A-ENTREGA"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.cancelamento"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "SEPARA-A-ENTREGA",
+                "name": "Produtos separados para entrega",
+                "next": "DESTINAR-ENTREGA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/entrega",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "DESTINAR-ENTREGA",
+                "name": "Destinar pedido",
+                "next": "HISTORICO-RETIRADA-OU-ENTREGA",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "DESTINAR-ENTREGA",
+                    "input": {
+                        "pizza": {
+                            "$ref": "entrega.cliente.pizza"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "HISTORICO-RETIRADA-OU-ENTREGA",
+                "name": "Entrega ou retirada",
+                "next": {
+                    "RETIRADA": "RETIRADA-DO-PEDIDO",
+                    "ENTREGA": "ENTREGA-DELIVERY",
+                    "default": "ENTREGA-DELIVERY"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "seleciona.entregas"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "ENTREGA-DELIVERY",
+                "name": "Produtos separados para envio",
+                "next": "BUSCAR-O-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/delivery",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "BUSCAR-O-PEDIDO",
+                "name": "Busca pedido",
+                "next": "SUA-PIZZA-ESTA-CHEGANDO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "BUSCAR-O-PEDIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "entrega.cliente.delivery"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "SUA-PIZZA-ESTA-CHEGANDO",
+                "name": "Cliente sua pizza está chegando",
+                "next": "TRANSPORTAR-O-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/chegando",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "TRANSPORTAR-O-PEDIDO",
+                "name": "Transportar pedido",
+                "next": "CHEGADA-DO-PEDIDO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "TRANSPORTAR-O-PEDIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "entrega.cliente.transporte"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "CHEGADA-DO-PEDIDO",
+                "name": "A pizza chega ao cliente",
+                "next": "AGUARDA-ENTREGA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/chegou",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "RETIRADA-DO-PEDIDO",
+                "name": "Produtos separados para retirada do cliente",
+                "next": "AGUARDA-ENTREGA",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/retirar",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "AGUARDA-ENTREGA",
+                "name": "Aguarda entrega enquanto confere dados",
+                "next": "POSSUI-HISTORICO-DE-PAGAMENTO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "AGUARDA-ENTREGA",
+                    "input": {
+                        "pizza": {
+                            "$ref": "entrega.cliente.aguarda"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "POSSUI-HISTORICO-DE-PAGAMENTO",
+                "name": "Verifica se foi feito o pagamento antecipado no app",
+                "next": {
+                    "SIM": "PROCESSO-FINALIZADO",
+                    "NAO": "PIX-CARTAO-OU-DINHEIRO",
+                    "default": "PIX-CARTAO-OU-DINHEIRO"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "entrega.cliente.pagamento"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PROCESSO-FINALIZADO",
+                "name": "Finaliza processo de entrega e venda no app",
+                "next": "RECEBE-PEDIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/ok",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PIX-CARTAO-OU-DINHEIRO",
+                "name": "Pagamento com pix cartão ou dinheiro",
+                "next": "PAGO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/pagar",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PAGO",
+                "name": "Cliente paga",
+                "next": "PRECISA-DE-TROCO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "PAGO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "entrega.cliente.pago"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "PRECISA-DE-TROCO",
+                "name": "Precisa de troco",
+                "next": {
+                    "SIM": "CALCULO-DO-VALOR",
+                    "NAO": "PROCESSO-FINALIZADO",
+                    "default": "CALCULO-DO-VALOR"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "pedido.entrega.troco"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "CALCULO-DO-VALOR",
+                "name": "Calcula o troco",
+                "next": "TROCO-RECEBIDO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {},
+                    "request": {
+                        "url": "www.minhapizzaria/clientes/minhaspizzas/status/troco",
+                        "verb": "GET",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+					{
+                "id": "TROCO-RECEBIDO",
+                "name": "Cliente paga",
+                "next": "PROCESSO-FINALIZADO",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "TROCO-RECEBIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "pedido.entrega.trocorecebido"
+                        }
+                    }
+                }
+            },
+					
+            {
+                "id": "RECEBE-PEDIDO",
+                "name": "Recebe a pizza",
+                "next": "PEDIDO-ESTA-OK",
+                "type": "UserTask",
+                "lane_id": "1",
+                "parameters": {
+                    "action": "RECEBE-PEDIDO",
+                    "input": {
+                        "pizza": {
+                            "$ref": "pedido.finalizado.ok"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "PEDIDO-ESTA-OK",
+                "name": "Verifica se o pedido esta ok",
+                "next": {
+                    "OK": "ELOGIO",
+                    "NAO ESTA": "RECLAMACAO",
+                    "default": "ELOGIO"
+                },
+                "type": "Flow",
+                "lane_id": "1",
+                "parameters": {
+                    "input": {
+                        "decision": {
+                            "$ref": "resultado.pedidoRecebido"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "ELOGIO",
+                "name": "Elogia o restaurante",
+                "next": "FIM-COM-ELOGIO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "ELOGIO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/pedidos-clientes/avaliacao-cliente",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "RECLAMACAO",
+                "name": "Reclama do restaurante",
+                "next": "FIM-COM-RECLAMACAO",
+                "type": "SystemTask",
+                "lane_id": "1",
+                "category": "HTTP",
+                "parameters": {
+                    "input": {
+                        "opinion": "RECLAMACAO"
+                    },
+                    "request": {
+                        "url": "www.minhapizzaria/pedidos-clientes/avaliacao-cliente",
+                        "verb": "POST",
+                        "headers": {
+                            "ContentType": "application/json"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "FIM-COM-RECLAMACAO",
+                "name": "FIM",
+                "next": null,
+                "type": "Finish",
+                "lane_id": "1"
+            },
+            {
+                "id": "FIM-COM-ELOGIO",
+                "name": "FIM",
+                "next": null,
+                "type": "Finish",
+                "lane_id": "1"
+            }
+        ],
+        "prepare": [],
+        "environment": {},
+        "requirements": [
+            "core"
+        ]
+    }
+}
